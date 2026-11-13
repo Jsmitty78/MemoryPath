@@ -4,11 +4,15 @@
 
 MemoryPath turns fragmented care records into a continuously updated **Living Care Profile**. It gives the next nurse a clear view of who the resident is, what has recently changed, known triggers, calming approaches, and care recommendations. Every proposed update includes supporting evidence and must be reviewed by a nurse before it becomes part of the approved profile.
 
-**Working prototype · 58 automated tests · Citation verification · Nurse approval gate · Versioned profiles**
+[![MemoryPath checks](https://github.com/Jsmitty78/MemoryPath/actions/workflows/ci.yml/badge.svg)](https://github.com/Jsmitty78/MemoryPath/actions/workflows/ci.yml)
+
+[Engineering guide](docs/ENGINEERING.md) · [Architecture](ARCHITECTURE.md) · [Run locally](#run-locally) · [Tests](#validate-the-project)
+
+**Prototype · 58 automated tests · Citation checks · Human review · Versioned profiles**
 
 ![MemoryPath workspace showing a resident's Living Care Profile, recent records, care recommendations, and voice interface](docs/screenshot-workspace.png)
 
-## Recruiter Snapshot
+## Project at a glance
 
 | | |
 |---|---|
@@ -21,7 +25,7 @@ MemoryPath turns fragmented care records into a continuously updated **Living Ca
 
 ## Project Context and Ownership
 
-MemoryPath was developed collaboratively during a hackathon. I originated the concept after interviewing a nurse, led the product direction, designed the core workflow, contributed to the frontend and backend, tested the record-to-profile approval flow, and delivered the final presentation.
+MemoryPath was developed collaboratively with Yu Yoshimuta during a hackathon. The current repository also includes subsequent development; it is not presented as the exact event submission. I originated the concept after interviewing a nurse, led the product direction, designed the core workflow, contributed to the frontend and backend, tested the record-to-profile approval flow, and delivered the final presentation.
 
 This repository preserves the collaborative development history while documenting the product decisions and engineering work I personally led or contributed to.
 
@@ -67,10 +71,10 @@ The AI can prepare an update, but it cannot modify the approved profile by itsel
 
 MemoryPath is designed as a care-support prototype, not an autonomous medical system.
 
-- The model does not diagnose or prescribe
+- Clinical-language checks warn on diagnostic or prescribing language; they do not guarantee safe model output
 - A profile never changes without explicit human approval
-- Proposed evidence must match the original record verbatim
-- Stale proposals cannot overwrite a newer profile version
+- Generated proposal citations are checked against normalized text in the original records; this does not establish clinical correctness
+- A base-version check rejects stale proposals; concurrent approvals still need transactional storage
 - Resident data included in this repository is synthetic
 - Safety behavior is covered by automated contract tests
 
@@ -126,7 +130,7 @@ For the complete technical design, see [ARCHITECTURE.md](ARCHITECTURE.md).
 ```bash
 git clone https://github.com/Jsmitty78/MemoryPath.git
 cd MemoryPath
-npm install
+npm ci
 cp .env.example .env.local
 ```
 
@@ -146,11 +150,16 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Validate the Project
 
+These checks use simulated model responses and need no live API key:
+
 ```bash
-npm run test
+npm test
 npm run typecheck
 npm run lint
+npm run build
 ```
+
+All 58 tests, type checking, lint, and the production build passed locally on 13 November 2026. [Exact scope, test map, and known limits](docs/ENGINEERING.md). The linked CI workflow tracks subsequent runs.
 
 The test suite covers record storage, proposal generation, citation verification, approval behavior, profile versioning, resident isolation, and the GBrain fallback.
 
@@ -162,7 +171,8 @@ Current limitations include:
 
 - Synthetic data for two demonstration residents
 - Local JSON storage instead of a production database
-- No authentication or role-based access control
+- No authentication or role-based access control; the approval action does not verify that the caller is a nurse
+- Local-file approval is not transactional, and edited approval citations are not re-verified against records
 - No live deployment or demo video yet
 - Proposal quality and latency depend on the connected model
 - The camera control is a disabled interface placeholder
